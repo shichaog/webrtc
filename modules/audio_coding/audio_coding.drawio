@@ -1,1 +1,58 @@
-<mxfile host="app.diagrams.net" modified="2022-08-18T05:46:01.202Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36" version="20.2.4" etag="bNkcxhRKCIcm-qdw9DBO" type="github"><diagram id="__t5j2zCFiW3Rvz2Qufi">UzV2zq1wL0osyPDNT0nNUTV2VTV2LsrPL4GwciucU3NyVI0MMlNUjV1UjYwMgFjVyA2HrCFY1qAgsSg1rwSLBiADYTaQg2Y1AA==</diagram></mxfile>
+<mxfile host="app.diagrams.net" modified="2022-08-18T06:30:09.639Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36" etag="CvL6dHlQhZ2QFWzh03Ka" version="20.2.4" type="github">
+  <diagram id="__t5j2zCFiW3Rvz2Qufi" name="Page-1">
+    <mxGraphModel dx="2148" dy="756" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="_X0fKtTXYEG9xx71EDyo-1" value="&lt;interface&gt; AudioEncoder " style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="265" y="100" width="385" height="114" as="geometry" />
+        </mxCell>
+        <mxCell id="_X0fKtTXYEG9xx71EDyo-3" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="_X0fKtTXYEG9xx71EDyo-1">
+          <mxGeometry y="26" width="385" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="_X0fKtTXYEG9xx71EDyo-4" value="+ Encode(rtp_timestamp,int16* audio, Buffer* encoded): EncodedInfo&#xa;+ SetFec(bool):bool&#xa;+ SetDtx(bool):bool&#xa;+ EnableAudioNetworkAdaptor(config_string, event_log):bool" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="_X0fKtTXYEG9xx71EDyo-1">
+          <mxGeometry y="34" width="385" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="_X0fKtTXYEG9xx71EDyo-6" value="&lt;interface&gt; AudioDecoder" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="100" y="310" width="560" height="188" as="geometry" />
+        </mxCell>
+        <mxCell id="_X0fKtTXYEG9xx71EDyo-7" value="+ field: type" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="_X0fKtTXYEG9xx71EDyo-6">
+          <mxGeometry y="26" width="560" height="74" as="geometry" />
+        </mxCell>
+        <mxCell id="_X0fKtTXYEG9xx71EDyo-8" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="_X0fKtTXYEG9xx71EDyo-6">
+          <mxGeometry y="100" width="560" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="_X0fKtTXYEG9xx71EDyo-9" value="+ ParsePayload(payload,timestamp):ParseResult&#xa;+ Decode(* encoded, encoded_len, sample_rate_hz, max_decoded_bytes,* decoded, speech_type): int&#xa;+ DecodePlc(num_frames, int16_t* decoded):size_t&#xa;# DecedeInternalr( encoded, encoded_len, sample_rate_hz, *decoded, * decoded,speech_type):int" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="_X0fKtTXYEG9xx71EDyo-6">
+          <mxGeometry y="108" width="560" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="_X0fKtTXYEG9xx71EDyo-10" value="&lt;interface&gt; AudioCodingModule" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="-490" y="110" width="510" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="_X0fKtTXYEG9xx71EDyo-11" value="+ field: type" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="_X0fKtTXYEG9xx71EDyo-10">
+          <mxGeometry y="26" width="510" height="74" as="geometry" />
+        </mxCell>
+        <mxCell id="_X0fKtTXYEG9xx71EDyo-12" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="_X0fKtTXYEG9xx71EDyo-10">
+          <mxGeometry y="100" width="510" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="_X0fKtTXYEG9xx71EDyo-13" value="+ ParsePayload(payload,timestamp):ParseResult&#xa;+ Add10MsData(const AudioFrame&amp; audio_frame)=0: int32_t&#xa;+ SetReceiveCodecs(std::map&lt;int, SdpAudioFormat&gt;&amp; codecs)=0:void&#xa;+ IncomingPacket( * incoming_payload, payload_len_bytes, RTPHeader&amp; rtp_header):int32_t&#xa;+ PlayoutData10Ms(desired_freq_hz, AudioFrame* audio_frame, bool* muted):int32_t&#xa;+ RegisterTransportCallback( AudioPacketizationCallback* transport):int32_t" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="_X0fKtTXYEG9xx71EDyo-10">
+          <mxGeometry y="108" width="510" height="102" as="geometry" />
+        </mxCell>
+        <mxCell id="_X0fKtTXYEG9xx71EDyo-14" value="&lt;interface&gt; AudioPacketizationCallback" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="-570" y="350" width="560" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="_X0fKtTXYEG9xx71EDyo-16" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="_X0fKtTXYEG9xx71EDyo-14">
+          <mxGeometry y="26" width="560" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="_X0fKtTXYEG9xx71EDyo-17" value="+ SendData(AudioFrameType, payload_type, timestamp, *payload_data, payload_len_bytes):int32_t&#xa;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="_X0fKtTXYEG9xx71EDyo-14">
+          <mxGeometry y="34" width="560" height="36" as="geometry" />
+        </mxCell>
+        <mxCell id="_X0fKtTXYEG9xx71EDyo-18" value="Use" style="endArrow=open;endSize=12;dashed=1;html=1;rounded=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;exitX=-0.006;exitY=0.853;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="_X0fKtTXYEG9xx71EDyo-13" target="_X0fKtTXYEG9xx71EDyo-14">
+          <mxGeometry width="160" relative="1" as="geometry">
+            <mxPoint x="-460" y="570" as="sourcePoint" />
+            <mxPoint x="-300" y="570" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
