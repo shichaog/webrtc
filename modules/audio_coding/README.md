@@ -4,7 +4,8 @@
 
 WebRTC 的audio coding 模块可以处理音频接收和发送，`acm2`目录是接收和发送的API实现。每个音频发送帧使用包含时长为10ms音频数据，通过`Add10MsData()`接口提供给音频编码模块，音频编码模块使用对应的编码器对音频帧进行编码，并将编码好的数据传给预先注册的音频分组回调，该回调将编码的音频打包成RT包，并通过传输层发送出去，WebRTC内置的音频编码器包括G711、G722, ilbc, isac, opus,pcm16b等，音频网络适配器为音频编码器（目前仅限于OPU）提供附加功能，以使音频编码器适应网络条件（带宽、丢包率等）。音频接收包通过`IncomingPacket()`实现，接收到的数据包将有jitter buffer(NetEq)模块处理，处理的内容包括解码，音频解码器通过解码器工厂类创建，解码后的数据通过`PlayData10Ms()`获取。
 
-## 编码模块总接口类
+## 编码模块接口类
+这里的接口包括编码和解码两个部分，
 
 音频编码接口类的核心内容如下：
 
@@ -46,7 +47,7 @@ WebRTC 的audio coding 模块可以处理音频接收和发送，`acm2`目录是
  }
 ```
 
-
+这里使用工厂类设计模式，是对编解码接口类的实现，这一接口对大部分实时音视频频应用场景，并不需要做更改，和编码相比，接收的待解码数据是通过网络传输的，这会导致丢包、抖动以及延迟到达、乱序等问题，所以需要实现jitter buffer功能，因而AudioCodingModuleImpl在实现编码接口类AudioCodingModule方法的时候，定义了AcmReceiver（NetEq以及解码）成员，接收到的数据被送到这个模块去解码了。
 
 ```c++
  //acm2/audio_coding_module.cc
@@ -109,7 +110,7 @@ WebRTC 的audio coding 模块可以处理音频接收和发送，`acm2`目录是
 
 ```
 
-编码数据流
+### 编码数据流
 
 接收到的数据包经过合法性、按需混音等操作后，发送给注册号的编码模块编码，这里集中于解码数据流，encoder_stack_是一个AudioEncoder类的一个智能指针。
 
@@ -143,8 +144,9 @@ WebRTC 的audio coding 模块可以处理音频接收和发送，`acm2`目录是
 343 }
 
 ```
+Encode是提供给上层的接口类，实际内部调用protected类型的EncodeImpl()实现编码，因而每个编解码器（opus、pcm16、g711）必须实现该方法。
 
-收包解码数据流
+### 收包解码数据流
 
 相比编码而言，因实时音频引用一般要求的网络延迟在300ms以内，因而收包要做抖动处理，而解码正是由处理抖动的模块调用的，所以使用了AcmReceiver这个类定义了接受模块公共的内容。
 
@@ -160,7 +162,7 @@ WebRTC 的audio coding 模块可以处理音频接收和发送，`acm2`目录是
 567 }
 ```
 
-获取解码数据流
+### 获取解码数据流
 
 解码的数据流在NetEq模块中，有实时性的概念和要求在这里，因而直接调用receiver_类的方法获取数据。
 
@@ -272,7 +274,7 @@ AudioEncoder::EncodedInfo AudioEncoder::Encode(
 }
 ```
 
-#### Opus类实现
+#### Opus编码器类实现
 
 opus第三方库开源实现都是基于c代码的，开源的第三方库都放在src/third_party目录下，这样做的好处是将第三方库和webrtc实现隔离，当第三方库没有改动时并不需要重新编译，对单个第三库而言节约的时间也许并不多，但是当第三库很多时，编译还是很耗时间的，使用这种解耦设计可以大大提高开发效率。
 
@@ -310,7 +312,7 @@ opus第三方库开源实现都是基于c代码的，开源的第三方库都放
 659       (Num10msFramesPerPacket() * SamplesPer10msFrame())) {
 660     return EncodedInfo();
 661   }
-//调用WebRtcOpus_Encode完成具体编码，这个函数实现于opus_interface.cc,这个interface.cc就是对第三方opus库函数的封装和调用，其主要是调用opus_encode或opus_multistream_encode编码。
+//调用WebRtcOpus_Encode完成具体编码，这个函数实现于opus_interface.cc,interface.cc就是对第三方opus库函数的封装和调用，其主要是调用opus_encode或opus_multistream_encode编码。
 665   const size_t max_encoded_bytes = SufficientOutputBufferSize();
 666   EncodedInfo info;
 667   info.encoded_bytes = encoded->AppendData(
@@ -340,17 +342,114 @@ opus第三方库开源实现都是基于c代码的，开源的第三方库都放
 690     bitrate_changed_ = false;
 691   }
 ```
-
-至此可以看到具体的编码器是如何通编码器接口类AudioEncoder派生出来的了，
-
+上文说到这个类是每个编码器都要实现的，在比如ilbc编码的实现如下：
 ```c++
-//peerconnection/audio_codec_factory.cc
-rtc::scoped_refptr<webrtc::AudioEncoderFactory> CreateWebrtcAudioEncoderFactory<
-  webrtc::AudioEncoderOpus, webrtc::AudioEncoderIsac,
-  webrtc::AudioEncoderG722, webrtc::AudioEncoderG711,
-  NotAdvertisedEncoder<webrtc::AduioEncoderL16>,
-  NotAdvertisedEncoder<webrtc::AdudioEncoderMultiChannelOpus>>();
+AudioEncoder::EncodedInfo AudioEncoderIlbcImpl::EncodeImpl(
+    uint32_t rtp_timestamp,
+    rtc::ArrayView<const int16_t> audio,
+    rtc::Buffer* encoded) {
+  // Save timestamp if starting a new packet.
+  if (num_10ms_frames_buffered_ == 0)
+    first_timestamp_in_buffer_ = rtp_timestamp;
+
+  // Buffer input.
+  std::copy(audio.cbegin(), audio.cend(),
+            input_buffer_ + kSampleRateHz / 100 * num_10ms_frames_buffered_);
+
+  // If we don't yet have enough buffered input for a whole packet, we're done
+  // for now.
+  if (++num_10ms_frames_buffered_ < num_10ms_frames_per_packet_) {
+    return EncodedInfo();
+  }
+
+  // Encode buffered input.
+  RTC_DCHECK_EQ(num_10ms_frames_buffered_, num_10ms_frames_per_packet_);
+  num_10ms_frames_buffered_ = 0;
+  //同样的其调用第三方库中的WebRtcIlbcfix_Encode去实现具体的编码
+  size_t encoded_bytes = encoded->AppendData(
+      RequiredOutputSizeBytes(), [&](rtc::ArrayView<uint8_t> encoded) {
+        const int r = WebRtcIlbcfix_Encode(
+            encoder_, input_buffer_,
+            kSampleRateHz / 100 * num_10ms_frames_per_packet_, encoded.data());
+        RTC_CHECK_GE(r, 0);
+
+        return static_cast<size_t>(r);
+      });
+
+  RTC_DCHECK_EQ(encoded_bytes, RequiredOutputSizeBytes());
+
+  EncodedInfo info;
+  info.encoded_bytes = encoded_bytes;
+  info.encoded_timestamp = first_timestamp_in_buffer_;
+  info.payload_type = payload_type_;
+  info.encoder_type = CodecType::kIlbc;
+  return info;
+}
 ```
+
+至此可以看到具体的编码器是如何通编码器接口类AudioEncoder派生出来的了，那还有一个问题，就是这些派生出来的编码器类是如何最终被应用程序调用的？
+这涉及到call、stream、channel的概念了。
+channel包括send和receive两种，channel是和ssrc挂钩的，用于表示来源，比如在视频通信时，发送的可能是麦克风采集的声音，也可以是分享的ppt上播放的声音，这两种声音就是通过ssrc来区分的，对于接收是一个道理，同时接收多个人会议音频时，ssrc也是不同的，每一个ssrc对应于一个channel，因为每一路处理的方式可能并不一样，比如麦克风采集信号要做语音增强，但是ppt分享的声音则不需要，channel主要是编码器和rtp的封装以及端到端加密等信息。
+stream也分发送和接收，属于transport层，即对channel层打包好的rtp/rtcp包进行发送和接收。
+call的概念就是双向通话会议了，也许有些实现命名不一样，但是不论是双人还是对人会议，通话这个概念是必须有的。这个call的类就是peer connection例子使用的通话类。
+```c+++
+//pc/peer_connection.h
+  // Creates a PeerConnection and initializes it with the given values.
+  // If the initialization fails, the function releases the PeerConnection
+  // and returns nullptr.
+  //
+  // Note that the function takes ownership of dependencies, and will
+  // either use them or release them, whether it succeeds or fails.
+  static RTCErrorOr<rtc::scoped_refptr<PeerConnection>> Create(
+      rtc::scoped_refptr<ConnectionContext> context,
+      const PeerConnectionFactoryInterface::Options& options,
+      std::unique_ptr<RtcEventLog> event_log,
+      std::unique_ptr<Call> call,
+      const PeerConnectionInterface::RTCConfiguration& configuration,
+      PeerConnectionDependencies dependencies);
+```
+对channel、stream以及call的细节实现这里不展开，待到具体层再分析。至此，AudioEncoder类实现和使用流程已结束，接下来是jitter buffer的接收类的功能和实现。
+### AcmReceiver
+这里再罗列一下third_party/webrtc/modules/audio_coding/acm2/audio_coding_module.cc中调用AudioCodingModuleImpl中实现接收的一些方法。
+```
+ acm2::AcmReceiver receiver_;  // AcmReceiver has it's own internal lock.
+ 
+ receiver_.SetCodecs(codecs);
+ receiver_.InsertPacket(
+      rtp_header,
+      rtc::ArrayView<const uint8_t>(incoming_payload, payload_length));
+ receiver_.GetAudio(desired_freq_hz, audio_frame, muted);
+ receiver_.GetNetworkStatistics(statistics);
+```
+AcmRecevier的主要方法就是上述代码段417-422中调用的，其创建的方式如下，主要是调用neteq工程类创建该对象，并且将其和解码器关联。
+```c++
+  37 std::unique_ptr<NetEq> CreateNetEq(
+  38     NetEqFactory* neteq_factory,
+  39     const NetEq::Config& config,
+  40     Clock* clock,
+  41     const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
+  42   if (neteq_factory) {
+  43     return neteq_factory->CreateNetEq(config, decoder_factory, clock);
+  44   }
+  45   return DefaultNetEqFactory().CreateNetEq(config, decoder_factory, clock);
+  46 }
+  
+  50 AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
+  51     : last_audio_buffer_(new int16_t[AudioFrame::kMaxDataSizeSamples]),
+  52       neteq_(CreateNetEq(config.neteq_factory,
+  53                          config.neteq_config,
+  54                          config.clock,
+  55                          config.decoder_factory)),
+  56       clock_(config.clock),
+  57       resampled_last_output_frame_(true) {
+  58   RTC_DCHECK(clock_);
+  59   memset(last_audio_buffer_.get(), 0,
+  60          sizeof(int16_t) * AudioFrame::kMaxDataSizeSamples);
+  61 }
+  
+```
+
+
 
 
 
