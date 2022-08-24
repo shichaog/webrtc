@@ -421,7 +421,7 @@ call的概念就是双向通话会议了，也许有些实现命名不一样，�
  receiver_.GetAudio(desired_freq_hz, audio_frame, muted);
  receiver_.GetNetworkStatistics(statistics);
 ```
-AcmRecevier的主要方法就是上述代码段417-422中调用的，其创建的方式如下，主要是调用neteq工程类创建该对象，并且将其和解码器关联。
+AcmRecevier的主要方法就是上述代码段417-422中调用的，而InsertPacket和GetAudio这两个接收数据流内部调用了neteq_同名方法，其创建的方式如下，主要是调用neteq工程类创建该对象，并且将其和解码器关联。
 ```c++
   37 std::unique_ptr<NetEq> CreateNetEq(
   38     NetEqFactory* neteq_factory,
@@ -448,7 +448,36 @@ AcmRecevier的主要方法就是上述代码段417-422中调用的，其创建�
   61 }
   
 ```
+neteq_也是通过工厂类的方法创建，NetEqFactory有两种，一种是default一种是customer，NetEq是一个接口类，这个类返回的是NetEq对象，
+```c++
+// Creates NetEq instances using the settings provided in the config struct.
+class NetEqFactory {
+ public:
+  virtual ~NetEqFactory() = default;
 
+  // Creates a new NetEq object, with parameters set in `config`. The `config`
+  // object will only have to be valid for the duration of the call to this
+  // method.
+  virtual std::unique_ptr<NetEq> CreateNetEq(
+      const NetEq::Config& config,
+      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory,
+      Clock* clock) const = 0;
+};
+```
+WebRTC在实现NetEqFactory的时候，在这个基础之上又封装了两个factory类，
+```c++
+class CustomNetEqFactory : public NetEqFactory {
+ private:
+  std::unique_ptr<NetEqControllerFactory> controller_factory_;
+}
+和
+class DefaultNetEqFactory : public NetEqFactory {
+
+ private:
+  const DefaultNetEqControllerFactory controller_factory_;
+}
+```
+这两个类中private字段是比NetEqFactory类多出来的，大多数情况下用default的就可以了，除非针对自己的应用场景需要调节相关内容，才真正需要自己customer。之后就是调用NetEQ算法细节内容见《实时语音处理实践指南》第11章，11.2小节。
 
 
 
