@@ -1,4 +1,8 @@
 # webrtc
 git clone https://webrtc.googlesource.com/src
 
-这是一个关于WebRTC native代码的阅读分析
+这是一个关于WebRTC native代码的阅读分析。
+ch01 APM 是audio processing module模块，代码位于modules/audio_processing目录，之所以这个模块放在第一章，是因为《实时语音处理实践指南》一书中详尽分析了APM中各个算法原理和其相关代码实现以及调用相关代码的demo示例。而这里的native代码分析则是基于音频实时通信数据流的分析。
+从大的功能模块上native代码主要分为音频、视频以及网络三个部分，而本篇以音频作为切入口，音频从数据流上看主要是音频采集播放、音频算法增强以及音频编解码三个大部分，围绕音视频通信场景，衍生出了跟场景相关的channel、stream以及Engine的概念。
+ch02_ADM.md 是Audio Device Moudle 该模块是对音频采集播放、设备管理的统一封装管理，这个模块实现的细节是调用各个平台（Mac、windows、Android、Linux等）不同操作系统提供的API进行设备管理、采集和播放。其各平台上具体采用的操作系统接口并不是这里分析的重点，因而只关注于通用设备接口层。
+ch03_ACM.md是Audio Coding Module，代码位于modules/audio_coding目录，该模块是音频编解码部分，这边分主要采用的是第三方开源的编解码库，如opus、G7XX等，WebRTC是对这些库的封装一层后在native中使用，关于opus内部实现的原理和细节，这边分主要采用的是第三方开源的编解码库，如opus、G7XX等，WebRTC是对这些库的封装一层后在native中使用，关于opus内部实现的原理和细节，见https://blog.csdn.net/shichaog/category_11817604.html 音频编码器专栏。
